@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:psicoapp/constants/app_colors.dart';
+import 'package:psicoapp/models/patient.dart';
 import 'package:psicoapp/pages/agenda_page.dart';
 import 'package:psicoapp/pages/patients_page.dart';
 import 'package:psicoapp/pages/reports_page.dart';
 import 'package:psicoapp/pages/settings_page.dart';
 import 'package:psicoapp/components/add_patient_modal.dart';
+import 'package:psicoapp/services/patient_storage.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,21 +18,75 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  List<Patient> _patients = [];
 
-  void _openAddPatientModal() {
-    showModalBottomSheet(
+  @override
+  void initState() {
+    super.initState();
+    _loadPatients();
+  }
+
+  Future<void> _loadPatients() async {
+    final patients = await PatientStorage.loadPatients();
+    setState(() {
+      _patients = patients;
+    });
+  }
+
+  Future<void> _savePatients() async {
+    await PatientStorage.savePatients(_patients);
+  }
+
+  void _openAddPatientModal({Patient? patient}) async {
+    final result = await showModalBottomSheet(
       context: context,
-      builder: (context) => AddPatientModal(),
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddPatientModal(patient: patient),
     );
+
+    if (result == null) return;
+
+    if (result == 'delete') {
+      setState(() {
+        _patients.removeWhere((p) => p.id == patient!.id);
+      });
+      await _savePatients();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Paciente excluído!')));
+    } else if (result is Patient) {
+      setState(() {
+        if (patient != null) {
+          final index = _patients.indexWhere((p) => p.id == patient.id);
+          if (index != -1) {
+            _patients[index] = result;
+          }
+        } else {
+          _patients.add(result);
+        }
+      });
+      await _savePatients();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${result.name} ${patient != null ? 'editado!' : 'adicionado!'}!',
+          ),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final List<Widget> _pages = [
-      PatientsPage(onAddPatient: _openAddPatientModal),
-      AgendaPage(),
-      ReportsPage(),
-      SettingsPage(),
+      PatientsPage(
+        onAddPatient: _openAddPatientModal,
+        onEditPatient: (patient) => _openAddPatientModal(patient: patient),
+        patients: _patients,
+      ),
+      const AgendaPage(),
+      const ReportsPage(),
+      const SettingsPage(),
     ];
 
     return Scaffold(

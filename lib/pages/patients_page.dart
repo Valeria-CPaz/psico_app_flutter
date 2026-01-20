@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:psicoapp/constants/app_colors.dart';
+import 'package:psicoapp/models/patient.dart';
+import 'package:psicoapp/utils/phone_formatter.dart';
 
 class PatientsPage extends StatelessWidget {
   final VoidCallback onAddPatient;
-  
-  const PatientsPage({super.key, required this.onAddPatient});
+  final Function(Patient) onEditPatient;
+  final List<Patient> patients;
+
+  const PatientsPage({
+    super.key,
+    required this.onAddPatient,
+    required this.onEditPatient,
+    required this.patients,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +24,11 @@ class PatientsPage extends StatelessWidget {
           TextField(
             decoration: InputDecoration(
               hintText: 'Buscar por nome',
-              prefixIcon: const Icon(Icons.search),
+              hintStyle: TextStyle(color: AppColors.primaryDark),
+              prefixIcon: const Icon(
+                Icons.search,
+                color: AppColors.primaryDark,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
@@ -50,7 +63,34 @@ class PatientsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          const Text('Lista de pacientes vai aparecer aqui'),
+          Expanded(
+            child: ListView.builder(
+              itemCount: patients.length,
+              itemBuilder: (context, index) {
+                final patient = patients[index];
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  color: AppColors.primary.withAlpha(40),
+                  elevation: 0,
+                  child: ListTile(
+                    title: Text(patient.name),
+                    subtitle: Text(
+                      patient.isSocial
+                          ? 'Social 💸: R\$${patient.socialValue?.toStringAsFixed(2) ?? '0'}'
+                          : 'Integral 💰',
+                    ),
+                    trailing: patient.phone != null
+                        ? Text(formatPhoneNumber(patient.phone!))
+                        : null,
+                    onTap: () => onEditPatient(patient),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
