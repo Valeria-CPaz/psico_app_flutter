@@ -3,7 +3,7 @@ import 'package:psicoapp/constants/app_colors.dart';
 import 'package:psicoapp/models/patient.dart';
 import 'package:psicoapp/utils/phone_formatter.dart';
 
-class PatientsPage extends StatelessWidget {
+class PatientsPage extends StatefulWidget {
   final VoidCallback onAddPatient;
   final Function(Patient) onEditPatient;
   final List<Patient> patients;
@@ -16,12 +16,34 @@ class PatientsPage extends StatelessWidget {
   });
 
   @override
+  State<PatientsPage> createState() => _PatientsPageState();
+}
+
+class _PatientsPageState extends State<PatientsPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
   Widget build(BuildContext context) {
+    // Filtro
+    List<Patient> filteredPatients = widget.patients
+        .where(
+          (patient) =>
+              patient.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
+        .toList();
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
           TextField(
+            controller: _searchController,
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
             decoration: InputDecoration(
               hintText: 'Buscar por nome',
               hintStyle: TextStyle(color: AppColors.primaryDark),
@@ -44,7 +66,7 @@ class PatientsPage extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: onAddPatient,
+            onPressed: widget.onAddPatient,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: AppColors.onPrimary,
@@ -65,9 +87,9 @@ class PatientsPage extends StatelessWidget {
           const SizedBox(height: 20),
           Expanded(
             child: ListView.builder(
-              itemCount: patients.length,
+              itemCount: filteredPatients.length,
               itemBuilder: (context, index) {
-                final patient = patients[index];
+                final patient = filteredPatients[index];
                 return Card(
                   margin: const EdgeInsets.symmetric(vertical: 4),
                   shape: RoundedRectangleBorder(
@@ -85,7 +107,7 @@ class PatientsPage extends StatelessWidget {
                     trailing: patient.phone != null
                         ? Text(formatPhoneNumber(patient.phone!))
                         : null,
-                    onTap: () => onEditPatient(patient),
+                    onTap: () => widget.onEditPatient(patient),
                   ),
                 );
               },
