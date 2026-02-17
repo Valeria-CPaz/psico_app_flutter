@@ -95,7 +95,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onPrimary,
         title: Text(
-          ['Pacientes', 'Agenda', 'Relatórios', 'Configurações'][_currentIndex],
+          ['.Pacientes', '.Agenda', '.Relatórios', '.Configurações'][_currentIndex],
           style: TextStyle(fontSize: 25),
         ),
       ),

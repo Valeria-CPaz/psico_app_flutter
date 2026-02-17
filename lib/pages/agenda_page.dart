@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:psicoapp/constants/app_colors.dart';
 
 List<DateTime> _daysInWeek(DateTime monday) {
   return List.generate(7, (index) => monday.add(Duration(days: index)));
@@ -19,6 +20,24 @@ class _AgendaPageState extends State<AgendaPage> {
   late DateTime _currentMonday;
   int _startHour = 7; // ajuste conforme quiser
   int _endHour = 20;
+
+  Widget _buildLegendChip(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 20,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(fontSize: 12)),
+      ],
+    );
+  }
 
   @override
   void initState() {
@@ -61,6 +80,12 @@ class _AgendaPageState extends State<AgendaPage> {
         content: Text('Agendar em ${date.day}/${date.month} às $hour:00'),
       ),
     );
+  }
+
+  void _openLegendModal() {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Modal legends')));
   }
 
   @override
@@ -141,12 +166,16 @@ class _AgendaPageState extends State<AgendaPage> {
                     // Coluna de hora
                     Container(
                       alignment: Alignment.center,
-                      child: Text('$hour h', style: TextStyle(color: Colors.grey.shade500),),
+                      child: Text(
+                        '$hour h',
+                        style: TextStyle(color: Colors.grey.shade500),
+                      ),
                     ),
                     // Slots dos dias (Seg a Dom)
                     ...List.generate(7, (dayIndex) {
                       return GestureDetector(
-                        onTap: () => _openAppointmentModal(days[dayIndex], hour),
+                        onTap: () =>
+                            _openAppointmentModal(days[dayIndex], hour),
                         child: Container(
                           margin: const EdgeInsets.all(1),
                           decoration: BoxDecoration(
@@ -163,6 +192,40 @@ class _AgendaPageState extends State<AgendaPage> {
             ),
           ),
         ),
+        const SizedBox(height: 8),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withAlpha(40),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              //Legendas
+              Expanded(
+                child: Row(
+                  children: [
+                    _buildLegendChip(Colors.blue, 'Paciente'),
+                    const SizedBox(width: 16),
+                    _buildLegendChip(Colors.yellow, 'Problema'),
+                    const SizedBox(width: 16),
+                    _buildLegendChip(Colors.green, 'Pessoal'),
+                  ],
+                ),
+              ),
+              // Config
+              IconButton(
+                icon: const Icon(Icons.settings, size: 20, color: AppColors.primaryDark),
+                onPressed: () {
+                  _openLegendModal();
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 80),
       ],
     );
   }
