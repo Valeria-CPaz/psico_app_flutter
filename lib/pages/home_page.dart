@@ -51,6 +51,7 @@ class _HomePageState extends State<HomePage> {
         _patients.removeWhere((p) => p.id == patient!.id);
       });
       await _savePatients();
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Paciente excluído!')));
@@ -66,6 +67,7 @@ class _HomePageState extends State<HomePage> {
         }
       });
       await _savePatients();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -78,7 +80,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> _pages = [
+    final List<Widget> pages = [
       PatientsPage(
         onAddPatient: _openAddPatientModal,
         onEditPatient: (patient) => _openAddPatientModal(patient: patient),
@@ -99,7 +101,7 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(fontSize: 25),
         ),
       ),
-      body: _pages[_currentIndex],
+      body: pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType
             .fixed, // Se não mudar isso, ele não vê o background color
