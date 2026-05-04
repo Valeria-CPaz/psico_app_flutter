@@ -4,7 +4,6 @@ import 'package:psicoapp/models/appointment.dart';
 import 'package:psicoapp/models/agenda_config.dart';
 import 'package:psicoapp/models/patient.dart';
 import 'package:psicoapp/services/agenda_storage.dart';
-import 'package:psicoapp/services/patient_storage.dart';
 import 'package:psicoapp/components/appointment_modal.dart';
 import 'package:psicoapp/components/agenda_config_modal.dart';
 
@@ -15,7 +14,9 @@ DateTime _mondayOfWeek(DateTime date) =>
     date.subtract(Duration(days: date.weekday - 1));
 
 class AgendaPage extends StatefulWidget {
-  const AgendaPage({super.key});
+  final List<Patient> patients;
+
+  const AgendaPage({super.key, required this.patients});
 
   @override
   State<AgendaPage> createState() => _AgendaPageState();
@@ -25,7 +26,6 @@ class _AgendaPageState extends State<AgendaPage> {
   late DateTime _currentMonday;
   AgendaConfig _config = AgendaConfig.defaults;
   List<Appointment> _appointments = [];
-  List<Patient> _patients = [];
 
   @override
   void initState() {
@@ -37,15 +37,13 @@ class _AgendaPageState extends State<AgendaPage> {
   Future<void> _loadData() async {
     final config = await AgendaStorage.loadConfig();
     final appointments = await AgendaStorage.loadAppointments();
-    final patients = await PatientStorage.loadPatients();
     setState(() {
       _config = config;
       _appointments = appointments;
-      _patients = patients;
     });
   }
 
-  // Return appointment (or null)
+  // Returns the appointment covering this day+hour, including multi-hour spans.
   Appointment? _appointmentAt(DateTime day, int hour) {
     try {
       return _appointments.firstWhere(
@@ -53,25 +51,26 @@ class _AgendaPageState extends State<AgendaPage> {
             a.dateTime.year == day.year &&
             a.dateTime.month == day.month &&
             a.dateTime.day == day.day &&
-            a.dateTime.hour == hour,
+            a.dateTime.hour <= hour &&
+            a.dateTime.hour + a.durationHours > hour,
       );
     } catch (_) {
       return null;
     }
   }
 
-  // Return legend of an appointment
   AgendaLegend? _legendOf(Appointment a) {
     try {
-      return _config.legends.firstWhere((legend) => legend.id == a.legendId);
+      return _config.legends.firstWhere((l) => l.id == a.legendId);
     } catch (_) {
       return null;
     }
   }
 
   Future<void> _openSlot(DateTime day, int hour) async {
-    final dt = DateTime(day.year, day.month, day.day, hour);
     final existing = _appointmentAt(day, hour);
+    // If tapping a continuation slot, open the appointment at its actual start time.
+    final dt = existing?.dateTime ?? DateTime(day.year, day.month, day.day, hour);
 
     final result = await showModalBottomSheet(
       context: context,
@@ -80,7 +79,7 @@ class _AgendaPageState extends State<AgendaPage> {
       builder: (_) => AppointmentModal(
         dateTime: dt,
         config: _config,
-        patients: _patients,
+        patients: widget.patients,
         existing: existing,
       ),
     );
@@ -88,21 +87,15 @@ class _AgendaPageState extends State<AgendaPage> {
     if (result == null) return;
 
     setState(() {
-      // Remove existing (if true)
-      _appointments.removeWhere(
-        (appointment) =>
-            appointment.dateTime.year == dt.year &&
-            appointment.dateTime.month == dt.month &&
-            appointment.dateTime.day == dt.day &&
-            appointment.dateTime.hour == dt.hour,
-      );
-
-      if (result is Appointment) {
-        _appointments.add(result);
-      }
+      if (existing != null) _appointments.remove(existing);
+      if (result is Appointment) _appointments.add(result);
     });
 
-    await AgendaStorage.saveAppointments(_appointments);
+    if (result == 'delete' && existing != null) {
+      await AgendaStorage.deleteAppointment(existing.id);
+    } else if (result is Appointment) {
+      await AgendaStorage.saveAppointment(result);
+    }
   }
 
   Future<void> _openConfig() async {
@@ -123,18 +116,8 @@ class _AgendaPageState extends State<AgendaPage> {
     final startDay = days[0];
     final endDay = days[6];
     const months = [
-      'Jan',
-      'Fev',
-      'Mar',
-      'Abr',
-      'Mai',
-      'Jun',
-      'Jul',
-      'Ago',
-      'Set',
-      'Out',
-      'Nov',
-      'Dez',
+      'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
     ];
     if (startDay.month == endDay.month) {
       return '${startDay.day} – ${endDay.day} de ${months[startDay.month - 1]}';
@@ -174,24 +157,20 @@ class _AgendaPageState extends State<AgendaPage> {
             IconButton(
               icon: const Icon(Icons.chevron_left),
               onPressed: () => setState(
-                () => _currentMonday = _currentMonday.subtract(
-                  const Duration(days: 7),
-                ),
+                () => _currentMonday = _currentMonday.subtract(const Duration(days: 7)),
               ),
             ),
             Text(_formatWeekRange(days)),
             IconButton(
               icon: const Icon(Icons.chevron_right),
               onPressed: () => setState(
-                () => _currentMonday = _currentMonday.add(
-                  const Duration(days: 7),
-                ),
+                () => _currentMonday = _currentMonday.add(const Duration(days: 7)),
               ),
             ),
           ],
         ),
 
-        // Days
+        // Day headers
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: Row(
@@ -209,10 +188,7 @@ class _AgendaPageState extends State<AgendaPage> {
                 7,
                 (i) => Expanded(
                   child: Center(
-                    child: Text(
-                      dayNames[i],
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                    child: Text(dayNames[i], style: const TextStyle(fontSize: 12)),
                   ),
                 ),
               ),
@@ -248,20 +224,12 @@ class _AgendaPageState extends State<AgendaPage> {
                           alignment: Alignment.center,
                           child: Text(
                             '$hour h',
-                            style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 11,
-                            ),
+                            style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
                           ),
                         ),
                         ...List.generate(7, (dayIndex) {
-                          final appointment = _appointmentAt(
-                            days[dayIndex],
-                            hour,
-                          );
-                          final legend = appointment != null
-                              ? _legendOf(appointment)
-                              : null;
+                          final appointment = _appointmentAt(days[dayIndex], hour);
+                          final legend = appointment != null ? _legendOf(appointment) : null;
 
                           return GestureDetector(
                             onTap: () => _openSlot(days[dayIndex], hour),
@@ -302,19 +270,12 @@ class _AgendaPageState extends State<AgendaPage> {
                   spacing: 12,
                   runSpacing: 4,
                   children: _config.legends
-                      .map(
-                        (legend) =>
-                            _buildLegendChip(legend.color, legend.label),
-                      )
+                      .map((l) => _buildLegendChip(l.color, l.label))
                       .toList(),
                 ),
               ),
               IconButton(
-                icon: const Icon(
-                  Icons.settings,
-                  size: 20,
-                  color: AppColors.primaryDark,
-                ),
+                icon: Icon(Icons.settings, size: 20, color: AppColors.primaryDark),
                 onPressed: _openConfig,
               ),
             ],

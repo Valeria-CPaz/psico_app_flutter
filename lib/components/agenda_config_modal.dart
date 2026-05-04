@@ -56,24 +56,48 @@ class _AgendaConfigModalState extends State<AgendaConfigModal> {
               const SizedBox(height: 12),
               const Text('Cor:'),
               const SizedBox(height: 6),
-              Wrap(
-                spacing: 8,
-                children: _palette.map((color) {
-                  return GestureDetector(
-                    onTap: () => setInner(() => pickedColor = color),
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: pickedColor == color
-                            ? Border.all(width: 3, color: Colors.black)
-                            : null,
-                      ),
-                    ),
-                  );
-                }).toList(),
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: _palette.sublist(0, 4).map((color) {
+                      return GestureDetector(
+                        onTap: () => setInner(() => pickedColor = color),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: pickedColor == color
+                                ? Border.all(width: 3, color: Colors.black)
+                                : null,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: _palette.sublist(4, 8).map((color) {
+                      return GestureDetector(
+                        onTap: () => setInner(() => pickedColor = color),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: pickedColor == color
+                                ? Border.all(width: 3, color: Colors.black)
+                                : null,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
             ],
           ),

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 class Appointment {
   final String id;
   final DateTime dateTime;
@@ -19,23 +17,19 @@ class Appointment {
 
   Map<String, dynamic> toMap() => {
     'id': id,
-    'dateTime': dateTime.toIso8601String(),
-    'durationHours': durationHours,
-    'legendId': legendId,
-    'patientId': patientId,
+    'date_time': dateTime.toIso8601String(),
+    'duration_hours': durationHours,
+    'legend_id': legendId,
+    'patient_id': patientId,
     'note': note,
   };
 
   factory Appointment.fromMap(Map<String, dynamic> map) => Appointment(
-    id: map['id'],
-    dateTime: DateTime.parse(map['dateTime']),
-    durationHours: map['durationHours'] ?? 1,
-    legendId: map['legendId'],
-    patientId: map['patientId'],
-    note: map['note'],
+    id: map['id'] as String,
+    dateTime: DateTime.parse(map['date_time'] as String),
+    durationHours: map['duration_hours'] as int? ?? 1,
+    legendId: map['legend_id'] as String,
+    patientId: map['patient_id'] as String?,
+    note: map['note'] as String?,
   );
-
-  String toJson() => jsonEncode(toMap());
-  factory Appointment.fromJson(String source) =>
-      Appointment.fromMap(jsonDecode(source));
 }

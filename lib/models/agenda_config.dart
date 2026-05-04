@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 
 class AgendaLegend {
@@ -15,9 +14,9 @@ class AgendaLegend {
   };
 
   factory AgendaLegend.fromMap(Map<String, dynamic> map) => AgendaLegend(
-    id: map['id'],
-    label: map['label'],
-    color: Color(map['color']),
+    id: map['id'] as String,
+    label: map['label'] as String,
+    color: Color(map['color'] as int),
   );
 }
 
@@ -41,22 +40,4 @@ class AgendaConfig {
       AgendaLegend(id: '3', label: 'Pessoal', color: Colors.green),
     ],
   );
-
-  Map<String, dynamic> toMap() => {
-    'legends': legends.map((legend) => legend.toMap()).toList(),
-    'startHour': startHour,
-    'endHour': endHour,
-  };
-
-  factory AgendaConfig.fromMap(Map<String, dynamic> map) => AgendaConfig(
-    legends: (map['legends'] as List)
-        .map((legend) => AgendaLegend.fromMap(legend))
-        .toList(),
-    startHour: map['startHour'],
-    endHour: map['endHour'],
-  );
-
-  String toJson() => jsonEncode(toMap());
-  factory AgendaConfig.fromJson(String source) =>
-      AgendaConfig.fromMap(jsonDecode(source));
 }

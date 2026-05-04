@@ -1,11 +1,11 @@
 {
-    "name": "psicoapp",
-    "short_name": "psicoapp",
+    "name": "PsicoApp",
+    "short_name": "PsicoApp",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#f0eccc",
+    "theme_color": "#a3961e",
+    "description": "Gestão de pacientes e agenda para psicólogos autônomos.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

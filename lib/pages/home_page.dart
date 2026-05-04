@@ -7,7 +7,7 @@ import 'package:psicoapp/pages/reports_page.dart';
 import 'package:psicoapp/pages/settings_page.dart';
 import 'package:psicoapp/components/add_patient_modal.dart';
 import 'package:psicoapp/services/patient_storage.dart';
-
+import 'package:psicoapp/services/theme_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,54 +24,54 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadPatients();
+    primaryColorNotifier.addListener(_onThemeChange);
+  }
+
+  void _onThemeChange() => setState(() {});
+
+  @override
+  void dispose() {
+    primaryColorNotifier.removeListener(_onThemeChange);
+    super.dispose();
   }
 
   Future<void> _loadPatients() async {
     final patients = await PatientStorage.loadPatients();
-    setState(() {
-      _patients = patients;
-    });
-  }
-
-  Future<void> _savePatients() async {
-    await PatientStorage.savePatients(_patients);
+    setState(() => _patients = patients);
   }
 
   void _openAddPatientModal({Patient? patient}) async {
     final result = await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => AddPatientModal(patient: patient),
     );
 
     if (result == null) return;
 
     if (result == 'delete') {
-      setState(() {
-        _patients.removeWhere((p) => p.id == patient!.id);
-      });
-      await _savePatients();
+      setState(() => _patients.removeWhere((p) => p.id == patient!.id));
+      await PatientStorage.deletePatient(patient!.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Paciente excluído!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Paciente excluído!')),
+      );
     } else if (result is Patient) {
       setState(() {
-        if (patient != null) {
-          final index = _patients.indexWhere((p) => p.id == patient.id);
-          if (index != -1) {
-            _patients[index] = result;
-          }
+        final index = _patients.indexWhere((p) => p.id == result.id);
+        if (index != -1) {
+          _patients[index] = result;
         } else {
           _patients.add(result);
         }
       });
-      await _savePatients();
+      await PatientStorage.savePatient(result);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${result.name} ${patient != null ? 'editado!' : 'adicionado!'}!',
+            '${result.name} ${patient != null ? 'editado' : 'adicionado'}!',
           ),
         ),
       );
@@ -86,7 +86,7 @@ class _HomePageState extends State<HomePage> {
         onEditPatient: (patient) => _openAddPatientModal(patient: patient),
         patients: _patients,
       ),
-      const AgendaPage(),
+      AgendaPage(patients: _patients),
       const ReportsPage(),
       const SettingsPage(),
     ];
@@ -98,39 +98,22 @@ class _HomePageState extends State<HomePage> {
         foregroundColor: AppColors.onPrimary,
         title: Text(
           ['.Pacientes', '.Agenda', '.Relatórios', '.Configurações'][_currentIndex],
-          style: TextStyle(fontSize: 25),
+          style: const TextStyle(fontSize: 25),
         ),
       ),
       body: pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType
-            .fixed, // Se não mudar isso, ele não vê o background color
+        type: BottomNavigationBarType.fixed,
         backgroundColor: AppColors.primary,
         selectedItemColor: AppColors.primaryDark,
         unselectedItemColor: AppColors.onPrimary,
         currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onTap: (index) => setState(() => _currentIndex = index),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people_alt),
-            label: 'Pacientes',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month_outlined),
-            label: 'Agenda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Relatórios',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Configurações',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.people_alt), label: 'Pacientes'),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), label: 'Agenda'),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Relatórios'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Configurações'),
         ],
       ),
     );

@@ -1,44 +1,55 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:psicoapp/models/appointment.dart';
 import 'package:psicoapp/models/agenda_config.dart';
 
 class AgendaStorage {
-  static const _appointmentsKey = 'appointments';
-  static const _configKey = 'agenda_config';
+  static Future<Box> _appointmentsBox() => Hive.openBox('appointments');
+  static Future<Box> _configBox() => Hive.openBox('agenda_config');
 
-  /* ---------------
-  -- Appointments --
-  --------------- */
+  // ── Appointments ──────────────────────────────────────────────────────────
+
   static Future<List<Appointment>> loadAppointments() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_appointmentsKey);
-    if (raw == null) return [];
-
-    final List decoded = jsonDecode(raw);
-    return decoded.map((entry) => Appointment.fromMap(entry)).toList();
+    final box = await _appointmentsBox();
+    return box.values
+        .map((v) => Appointment.fromMap(Map<String, dynamic>.from(v as Map)))
+        .toList();
   }
 
-  static Future<void> saveAppointments(List<Appointment> list) async {
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = jsonEncode(
-      list.map((appointment) => appointment.toMap()).toList(),
-    );
-    await prefs.setString(_appointmentsKey, encoded);
+  static Future<void> saveAppointment(Appointment appointment) async {
+    final box = await _appointmentsBox();
+    await box.put(appointment.id, appointment.toMap());
   }
 
-  /* ---------------
-  ----- Config -----
-  --------------- */
+  static Future<void> deleteAppointment(String id) async {
+    final box = await _appointmentsBox();
+    await box.delete(id);
+  }
+
+  // ── Config ────────────────────────────────────────────────────────────────
+
   static Future<AgendaConfig> loadConfig() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_configKey);
+    final box = await _configBox();
+    final raw = box.get('config');
     if (raw == null) return AgendaConfig.defaults;
-    return AgendaConfig.fromJson(raw);
+
+    final map = Map<String, dynamic>.from(raw as Map);
+    final legendsRaw = (map['legends'] as List?) ?? [];
+
+    return AgendaConfig(
+      startHour: map['start_hour'] as int,
+      endHour: map['end_hour'] as int,
+      legends: legendsRaw
+          .map((l) => AgendaLegend.fromMap(Map<String, dynamic>.from(l as Map)))
+          .toList(),
+    );
   }
 
   static Future<void> saveConfig(AgendaConfig config) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_configKey, config.toJson());
+    final box = await _configBox();
+    await box.put('config', {
+      'start_hour': config.startHour,
+      'end_hour': config.endHour,
+      'legends': config.legends.map((l) => l.toMap()).toList(),
+    });
   }
 }

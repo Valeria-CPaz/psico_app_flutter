@@ -56,7 +56,7 @@ class _AppointmentModalState extends State<AppointmentModal> {
       dateTime: widget.dateTime,
       durationHours: _durationHours,
       legendId: _selectedLegendId,
-      patientId: _selectedLegendId,
+      patientId: _selectedPatientId,
       note: _noteController.text.trim().isEmpty
           ? null
           : _noteController.text.trim(),

@@ -47,7 +47,7 @@ class _PatientsPageState extends State<PatientsPage> {
             decoration: InputDecoration(
               hintText: 'Buscar por nome',
               hintStyle: TextStyle(color: AppColors.primaryDark),
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.search,
                 color: AppColors.primaryDark,
               ),

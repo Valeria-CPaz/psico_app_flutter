@@ -55,7 +55,7 @@ class _AddPatientModalState extends State<AddPatientModal> {
             children: [
               const SizedBox(height: 16),
               Text(
-                'Novo Paciente',
+                widget.patient == null ? 'Novo Paciente' : 'Editar Paciente',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -209,7 +209,7 @@ class _AddPatientModalState extends State<AddPatientModal> {
                     }
 
                     final patient = Patient(
-                      id: const Uuid().v4(),
+                      id: widget.patient?.id ?? const Uuid().v4(),
                       name: _nameController.text.trim(),
                       phone: _phoneController.text.trim().isNotEmpty
                           ? _phoneController.text.replaceAll(

@@ -13,17 +13,19 @@ class Patient {
     this.socialValue,
   });
 
-  Map<String, dynamic> toMap() {
-    return {'id': id, 'name': name, 'phone': phone, 'isSocial': isSocial, 'socialValur': socialValue};
-  }
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'name': name,
+    'phone': phone,
+    'is_social': isSocial ? 1 : 0,
+    'social_value': socialValue,
+  };
 
-  factory Patient.fromMap(Map<String, dynamic> map) {
-    return Patient(
-      id: map['id'],
-      name: map['name'],
-      phone: map['phone'],
-      isSocial: map['isSocial'] ?? false,
-      socialValue: map['socialValue'] is double ? map['socialValue'] : null,
-    );
-  }
+  factory Patient.fromMap(Map<String, dynamic> map) => Patient(
+    id: map['id'] as String,
+    name: map['name'] as String,
+    phone: map['phone'] as String?,
+    isSocial: (map['is_social'] as int? ?? 0) == 1,
+    socialValue: map['social_value'] as double?,
+  );
 }
